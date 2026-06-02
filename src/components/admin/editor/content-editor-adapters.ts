@@ -2,7 +2,8 @@ import type {
   AdminBitsEditorValues,
   AdminContentEditorValues,
   AdminContentWriteCollectionKey,
-  AdminEssayEditorValues
+  AdminEssayEditorValues,
+  AdminMemoEditorValues
 } from '../../../lib/admin-console/content-shared';
 import { getWriteFieldLabel } from './editor-shell-helpers';
 
@@ -16,12 +17,11 @@ type ContentEditorCapabilities = {
   imagePicker: boolean;
   imageArray: boolean;
   essayOutline: boolean;
+  delete: boolean;
 };
 
 export type ContentEditorAdapter = {
   collection: AdminContentWriteCollectionKey;
-  dialogTitle: string;
-  fieldsAriaLabel: string;
   capabilities: ContentEditorCapabilities;
   frontmatterIssuePaths: ReadonlySet<string>;
   isFrontmatterIssuePath: (path: string) => boolean;
@@ -55,16 +55,27 @@ const cloneBitsValues = (value: AdminBitsEditorValues): AdminBitsEditorValues =>
   imagesText: value.imagesText
 });
 
+const cloneMemoValues = (value: AdminMemoEditorValues): AdminMemoEditorValues => ({
+  title: value.title,
+  subtitle: value.subtitle,
+  date: value.date,
+  draft: value.draft,
+  slug: value.slug
+});
+
 export const isEssayEditorValues = (value: AdminContentEditorValues | null): value is AdminEssayEditorValues =>
   Boolean(value && 'publishedAt' in value && 'archive' in value && 'cover' in value && 'badge' in value);
 
 export const isBitsEditorValues = (value: AdminContentEditorValues | null): value is AdminBitsEditorValues =>
   Boolean(value && 'authorName' in value && 'authorAvatar' in value && 'imagesText' in value);
 
+export const isMemoEditorValues = (value: AdminContentEditorValues | null): value is AdminMemoEditorValues =>
+  Boolean(value && 'subtitle' in value && !('description' in value));
+
 const cloneContentEditorValues = (value: AdminContentEditorValues): AdminContentEditorValues => {
   if (isEssayEditorValues(value)) return cloneEssayValues(value);
   if (isBitsEditorValues(value)) return cloneBitsValues(value);
-  return { ...value };
+  return cloneMemoValues(value);
 };
 
 const isEqualContentEditorValues = (
@@ -104,6 +115,8 @@ const BITS_FRONTMATTER_ISSUE_PATHS = new Set([
   'imagesText'
 ]);
 
+const MEMO_FRONTMATTER_ISSUE_PATHS = new Set<string>();
+
 const isBitsFrontmatterIssuePath = (path: string): boolean =>
   BITS_FRONTMATTER_ISSUE_PATHS.has(path) || path.startsWith('images[');
 
@@ -135,10 +148,17 @@ const BITS_FIELD_LABELS: Readonly<Record<string, string>> = {
   body: '正文'
 };
 
+const MEMO_FIELD_LABELS: Readonly<Record<string, string>> = {
+  title: '标题',
+  subtitle: '副标题',
+  date: '日期',
+  draft: '生产阻断状态',
+  slug: '元信息别名',
+  body: '正文'
+};
+
 const ESSAY_ADAPTER: ContentEditorAdapter = {
   collection: 'essay',
-  dialogTitle: '文章信息',
-  fieldsAriaLabel: '随笔字段',
   capabilities: {
     body: true,
     preview: true,
@@ -148,7 +168,8 @@ const ESSAY_ADAPTER: ContentEditorAdapter = {
     imageUpload: false,
     imagePicker: false,
     imageArray: false,
-    essayOutline: true
+    essayOutline: true,
+    delete: true
   },
   frontmatterIssuePaths: ESSAY_FRONTMATTER_ISSUE_PATHS,
   isFrontmatterIssuePath: (path) => hasExactFrontmatterIssuePath(ESSAY_FRONTMATTER_ISSUE_PATHS, path),
@@ -160,8 +181,6 @@ const ESSAY_ADAPTER: ContentEditorAdapter = {
 
 const BITS_ADAPTER: ContentEditorAdapter = {
   collection: 'bits',
-  dialogTitle: '修改信息',
-  fieldsAriaLabel: '内容字段',
   capabilities: {
     body: true,
     preview: true,
@@ -171,7 +190,8 @@ const BITS_ADAPTER: ContentEditorAdapter = {
     imageUpload: true,
     imagePicker: true,
     imageArray: true,
-    essayOutline: false
+    essayOutline: false,
+    delete: true
   },
   frontmatterIssuePaths: BITS_FRONTMATTER_ISSUE_PATHS,
   isFrontmatterIssuePath: isBitsFrontmatterIssuePath,
@@ -181,9 +201,32 @@ const BITS_ADAPTER: ContentEditorAdapter = {
   getDeleteTitle: (value, entryId) => isBitsEditorValues(value) ? value.title || entryId : entryId
 };
 
+const MEMO_ADAPTER: ContentEditorAdapter = {
+  collection: 'memo',
+  capabilities: {
+    body: true,
+    preview: true,
+    bodyImageInsert: true,
+    bodyImageUpload: true,
+    bodyGalleryInsert: false,
+    imageUpload: false,
+    imagePicker: false,
+    imageArray: false,
+    essayOutline: false,
+    delete: false
+  },
+  frontmatterIssuePaths: MEMO_FRONTMATTER_ISSUE_PATHS,
+  isFrontmatterIssuePath: (path) => hasExactFrontmatterIssuePath(MEMO_FRONTMATTER_ISSUE_PATHS, path),
+  cloneValues: cloneContentEditorValues,
+  isEqualValues: isEqualContentEditorValues,
+  getWriteFieldLabel: (field) => getContentWriteFieldLabel(field, MEMO_FIELD_LABELS),
+  getDeleteTitle: (value, entryId) => isMemoEditorValues(value) ? value.title || entryId : entryId
+};
+
 const CONTENT_EDITOR_ADAPTERS = {
   essay: ESSAY_ADAPTER,
-  bits: BITS_ADAPTER
+  bits: BITS_ADAPTER,
+  memo: MEMO_ADAPTER
 } as const satisfies Record<AdminContentWriteCollectionKey, ContentEditorAdapter>;
 
 export const getContentEditorAdapter = (collection: AdminContentWriteCollectionKey): ContentEditorAdapter =>

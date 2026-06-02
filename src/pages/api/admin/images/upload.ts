@@ -7,11 +7,12 @@ import {
 import {
   AdminImageUploadError,
   uploadAdminBitsImage,
-  uploadAdminEssayImage
+  uploadAdminEssayImage,
+  uploadAdminMemoImage
 } from '../../../../lib/admin-console/image-upload';
 import {
-  isAdminContentWriteCollectionKey,
-  type AdminContentWriteCollectionKey
+  isAdminContentImageUploadCollectionKey,
+  type AdminContentImageUploadCollectionKey
 } from '../../../../lib/admin-console/content-collections';
 
 const JSON_HEADERS = ADMIN_JSON_HEADERS;
@@ -44,8 +45,9 @@ const withAdminImageUploadLock = createAdminWriteQueue();
 
 const uploaders = {
   essay: uploadAdminEssayImage,
-  bits: uploadAdminBitsImage
-} as const satisfies Record<AdminContentWriteCollectionKey, typeof uploadAdminEssayImage>;
+  bits: uploadAdminBitsImage,
+  memo: uploadAdminMemoImage
+} as const satisfies Record<AdminContentImageUploadCollectionKey, typeof uploadAdminEssayImage>;
 
 export const GET: APIRoute = async () => {
   if (!import.meta.env.DEV && !process.env.VITEST) {
@@ -83,8 +85,8 @@ export const POST: APIRoute = async ({ request, url }) => {
   const file = getRequiredFile(formData, 'image');
   const errors: string[] = [];
 
-  if (!isAdminContentWriteCollectionKey(collection)) {
-    errors.push('当前仅支持随笔正文图片或絮语配图上传');
+  if (!isAdminContentImageUploadCollectionKey(collection)) {
+    errors.push('当前仅支持随笔正文图片、小记正文图片或絮语配图上传');
   }
   if (!entryId) {
     errors.push('上传请求缺少 entryId');
@@ -93,7 +95,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     errors.push('上传请求缺少 image 文件');
   }
 
-  if (errors.length > 0 || !file || !isAdminContentWriteCollectionKey(collection)) {
+  if (errors.length > 0 || !file || !isAdminContentImageUploadCollectionKey(collection)) {
     return createJsonResponse(400, {
       ok: false,
       errors

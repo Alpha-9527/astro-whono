@@ -1,7 +1,7 @@
 <script lang="ts">
 import type {
   AdminContentEditorValues,
-  AdminContentWriteCollectionKey
+  AdminContentCollectionKey
 } from '../../../lib/admin-console/content-shared';
 import AdminEditorIcon from './AdminEditorIcon.svelte';
 import {
@@ -16,7 +16,7 @@ type AdminContentIssue = {
 
 type Props = {
   value: AdminContentEditorValues;
-  collection?: AdminContentWriteCollectionKey;
+  collection?: AdminContentCollectionKey;
   issues?: readonly AdminContentIssue[];
   disabled?: boolean;
   slugPlaceholder?: string;

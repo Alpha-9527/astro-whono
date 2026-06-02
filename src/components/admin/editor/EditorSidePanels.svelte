@@ -23,7 +23,9 @@ type Props = {
   headings: readonly MarkdownOutlineItem[];
   listItems: readonly EditorOutlineListItem[];
   outlineHeadingsEnabled?: boolean;
+  outlineListEnabled?: boolean;
   outlineHeadingsTabLabel?: string;
+  outlineHeadingsTabIcon?: 'book-open-text' | 'list-collapse' | 'square-chart-gantt' | undefined;
   outlineListTabLabel?: string;
   outlineHeadingsEmptyText?: string;
   outlineListEmptyText?: string;
@@ -41,7 +43,9 @@ let {
   headings,
   listItems,
   outlineHeadingsEnabled = true,
+  outlineListEnabled = true,
   outlineHeadingsTabLabel = '文章目录',
+  outlineHeadingsTabIcon = undefined,
   outlineListTabLabel = '文章列表',
   outlineHeadingsEmptyText = '暂无 H2/H3 标题',
   outlineListEmptyText = '暂无文章',
@@ -199,7 +203,9 @@ $effect(() => {
         {headings}
         {listItems}
         headingsEnabled={outlineHeadingsEnabled}
+        listEnabled={outlineListEnabled}
         headingsTabLabel={outlineHeadingsTabLabel}
+        headingsTabIcon={outlineHeadingsTabIcon}
         listTabLabel={outlineListTabLabel}
         headingsEmptyText={outlineHeadingsEmptyText}
         listEmptyText={outlineListEmptyText}

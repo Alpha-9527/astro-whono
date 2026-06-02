@@ -1,5 +1,5 @@
 /* Admin Content Editor Page
-   承载 _edit 页面壳层、essay 页头和文章信息入口；不承载 legacy 表单或 workspace 内部布局。
+   承载 _edit 页面壳层、workspace 页头和文章信息入口；不承载 legacy 表单或 workspace 内部布局。
 */
 
 .admin-content-edit-page {
@@ -9,13 +9,11 @@
   gap: 20px;
 }
 
-.admin-content-edit-page--essay,
-.admin-content-edit-page--bits {
+.admin-content-edit-page--workspace {
   gap: 2px;
 }
 
-body.admin-page--content-editor .admin-content-edit-page--essay,
-body.admin-page--content-editor .admin-content-edit-page--bits {
+body.admin-page--content-editor .admin-content-edit-page--workspace {
   grid-template-rows: auto minmax(0, 1fr);
 }
 
@@ -58,14 +56,12 @@ body.admin-page--content-editor .divider {
 body.admin-page--content-editor .content__inner,
 body.admin-page--content-editor .admin-console,
 body.admin-page--content-editor .admin-shell,
-body.admin-page--content-editor .admin-content-edit-page--essay,
-body.admin-page--content-editor .admin-content-edit-page--bits,
-body.admin-page--content-editor .admin-content-editor--svelte,
-body.admin-page--content-editor .admin-content-editor--bits,
+body.admin-page--content-editor .admin-content-edit-page--workspace,
+body.admin-page--content-editor .admin-content-editor--workspace,
 body.admin-page--content-editor [data-admin-content-editor-island],
-body.admin-page--content-editor [data-admin-essay-editor-island],
 body.admin-page--content-editor [data-admin-bits-editor-island],
-body.admin-page--content-editor [data-admin-bits-editor-workspace] {
+body.admin-page--content-editor [data-admin-bits-editor-workspace],
+body.admin-page--content-editor [data-admin-memo-editor-workspace] {
   min-height: 0;
   height: 100%;
   max-width: none;
@@ -74,10 +70,8 @@ body.admin-page--content-editor [data-admin-bits-editor-workspace] {
 
 body.admin-page--content-editor .admin-console,
 body.admin-page--content-editor .admin-shell,
-body.admin-page--content-editor .admin-content-editor--svelte,
-body.admin-page--content-editor .admin-content-editor--bits,
+body.admin-page--content-editor .admin-content-editor--workspace,
 body.admin-page--content-editor [data-admin-content-editor-island],
-body.admin-page--content-editor [data-admin-essay-editor-island],
 body.admin-page--content-editor [data-admin-bits-editor-island] {
   display: grid;
   grid-template-rows: minmax(0, 1fr);
@@ -105,8 +99,7 @@ body.admin-page--content-editor .admin-editor-shell__actions {
   display: none;
 }
 
-.admin-content-edit-page--essay .admin-content-page-head,
-.admin-content-edit-page--bits .admin-content-page-head {
+.admin-content-edit-page--workspace .admin-content-page-head {
   align-items: center;
   padding-inline: 16px 12px;
   padding-bottom: 18px;

@@ -3,14 +3,16 @@ import path from 'node:path';
 import { collectEssayImageBlocks } from './essay-image-blocks';
 import { collectEssayGalleryImageSources } from './essay-gallery-blocks';
 
-export type EssayLocalImageReference = {
+export type MarkdownBodyLocalImageReference = {
   kind: 'markdown' | 'figure' | 'gallery';
   src: string;
   absolutePath: string;
   relativePath: string;
 };
 
-type FindMissingEssayLocalImageReferencesInput = {
+export type EssayLocalImageReference = MarkdownBodyLocalImageReference;
+
+type FindMissingMarkdownBodyLocalImageReferencesInput = {
   bodyText: string;
   sourcePath: string;
   projectRoot?: string;
@@ -56,11 +58,11 @@ const toLocalImageReference = ({
   sourcePath,
   projectRoot
 }: {
-  kind: EssayLocalImageReference['kind'];
+  kind: MarkdownBodyLocalImageReference['kind'];
   src: string;
   sourcePath: string;
   projectRoot: string;
-}): EssayLocalImageReference | null => {
+}): MarkdownBodyLocalImageReference | null => {
   const localPathPart = getLocalImagePathPart(src);
   if (!localPathPart) return null;
 
@@ -78,12 +80,12 @@ const toLocalImageReference = ({
   };
 };
 
-export const collectEssayLocalImageReferences = ({
+export const collectMarkdownBodyLocalImageReferences = ({
   bodyText,
   sourcePath,
   projectRoot = getProjectRoot()
-}: Omit<FindMissingEssayLocalImageReferencesInput, 'fileExists'>): EssayLocalImageReference[] => {
-  const references: EssayLocalImageReference[] = [];
+}: Omit<FindMissingMarkdownBodyLocalImageReferencesInput, 'fileExists'>): MarkdownBodyLocalImageReference[] => {
+  const references: MarkdownBodyLocalImageReference[] = [];
 
   for (const block of collectEssayImageBlocks(bodyText)) {
     const reference = toLocalImageReference({
@@ -113,11 +115,11 @@ export const findMissingEssayLocalImageReferences = ({
   sourcePath,
   projectRoot = getProjectRoot(),
   fileExists = existsSync
-}: FindMissingEssayLocalImageReferencesInput): EssayLocalImageReference[] => {
+}: FindMissingMarkdownBodyLocalImageReferencesInput): MarkdownBodyLocalImageReference[] => {
   const seen = new Set<string>();
-  const missing: EssayLocalImageReference[] = [];
+  const missing: MarkdownBodyLocalImageReference[] = [];
 
-  for (const reference of collectEssayLocalImageReferences({ bodyText, sourcePath, projectRoot })) {
+  for (const reference of collectMarkdownBodyLocalImageReferences({ bodyText, sourcePath, projectRoot })) {
     if (fileExists(reference.absolutePath)) continue;
     if (seen.has(reference.relativePath)) continue;
 
@@ -127,3 +129,6 @@ export const findMissingEssayLocalImageReferences = ({
 
   return missing;
 };
+
+export const collectEssayLocalImageReferences = collectMarkdownBodyLocalImageReferences;
+export const findMissingMarkdownBodyLocalImageReferences = findMissingEssayLocalImageReferences;

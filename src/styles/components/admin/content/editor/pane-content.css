@@ -539,7 +539,7 @@
   margin-inline: auto;
 }
 
-.admin-editor-preview__article > :first-child {
+.admin-editor-preview__article:not(.memo-content) > :first-child {
   margin-top: 0;
 }
 

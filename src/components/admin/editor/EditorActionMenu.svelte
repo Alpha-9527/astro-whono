@@ -17,10 +17,11 @@ type Props = {
   resetLabel?: string;
   downloadLabel?: string;
   deleteLabel?: string;
+  showDelete?: boolean;
   onSave: () => void | Promise<void>;
   onReset: (event: MouseEvent) => void;
   onDownload: (event: MouseEvent) => void;
-  onDelete: (event: MouseEvent) => void | Promise<void>;
+  onDelete?: (event: MouseEvent) => void | Promise<void>;
 };
 
 let {
@@ -38,6 +39,7 @@ let {
   resetLabel = '还原更改',
   downloadLabel = '下载源文件',
   deleteLabel = '删除内容',
+  showDelete = true,
   onSave,
   onReset,
   onDownload,
@@ -77,15 +79,17 @@ let {
         <AdminEditorIcon name="download" size={14} strokeWidth={2} class="admin-icon" />
         <span>{downloadLabel}</span>
       </a>
-      <button
-        class="admin-content-menu-item admin-content-menu-item--danger"
-        type="button"
-        disabled={busy}
-        onclick={(event) => void onDelete(event)}
-      >
-        <AdminEditorIcon name="trash" size={14} strokeWidth={2} class="admin-icon" />
-        <span>{deleteLabel}</span>
-      </button>
+      {#if showDelete && onDelete}
+        <button
+          class="admin-content-menu-item admin-content-menu-item--danger"
+          type="button"
+          disabled={busy}
+          onclick={(event) => void onDelete(event)}
+        >
+          <AdminEditorIcon name="trash" size={14} strokeWidth={2} class="admin-icon" />
+          <span>{deleteLabel}</span>
+        </button>
+      {/if}
     </div>
   </details>
 </div>

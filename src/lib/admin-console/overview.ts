@@ -272,10 +272,13 @@ const getRecentBitsPublication = (
 
 const getRecentMemoPublication = (entry: MemoEntry): AdminOverviewRecentPublication => {
   const isDraft = entry.data.draft === true;
+  const title = entry.data.title?.trim()
+    || getMemoDerivedText(entry).excerptText
+    || '小记';
   return {
     collection: 'memo',
     collectionLabel: COLLECTION_LABELS.memo,
-    title: entry.data.title,
+    title,
     href: isDraft ? null : '/memo/',
     isDraft,
     date: entry.data.date ?? null,

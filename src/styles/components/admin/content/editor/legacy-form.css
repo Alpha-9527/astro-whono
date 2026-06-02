@@ -9,7 +9,7 @@
   border-top: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
 }
 
-.admin-content-editor:not(.admin-content-editor--svelte),
+.admin-content-editor:not(.admin-content-editor--workspace),
 .admin-content-readonly {
   max-inline-size: 100%;
   overflow-x: auto;
@@ -17,7 +17,7 @@
   scrollbar-width: thin;
 }
 
-.admin-content-editor:not(.admin-content-editor--svelte) > :where(
+.admin-content-editor:not(.admin-content-editor--workspace) > :where(
   .admin-content-section-head,
   .admin-banner,
   form,
@@ -80,8 +80,9 @@
   border-top: 1px solid var(--admin-row-divider);
 }
 
-.admin-content-editor--svelte {
+.admin-content-editor--workspace {
   gap: 0;
   padding-top: 0;
   border-top: 0;
+  overflow: hidden;
 }

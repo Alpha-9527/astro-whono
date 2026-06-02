@@ -319,10 +319,7 @@ const createMemoSourceIndexItem: FrontmatterAdapter = (record) => {
   const slug = normalizeOptionalText(frontmatter.slug) || null;
   const subtitle = normalizeOptionalText(frontmatter.subtitle);
   const bodyDerived = getBodyDerived(record);
-  const sourceError = mergeSourceError(
-    record.sourceError,
-    !hasSourceError && !normalizeOptionalText(frontmatter.title) ? 'memo.title 缺失或不是字符串' : null
-  );
+  const sourceError = record.sourceError;
 
   return createBaseItem(record, {
     title,

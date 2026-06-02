@@ -3,23 +3,39 @@ type Props = {
   html?: string;
   loading?: boolean;
   error?: string;
+  articleClass?: string;
   onScrollElementChange?: (element: HTMLElement | null) => void;
+  onArticleElementChange?: (element: HTMLElement | null) => void;
 };
 
 let {
   html = '',
   loading = false,
   error = '',
-  onScrollElementChange
+  articleClass = '',
+  onScrollElementChange,
+  onArticleElementChange
 }: Props = $props();
 
 let previewScrollElement = $state<HTMLElement | null>(null);
+let previewArticleElement = $state<HTMLElement | null>(null);
+const previewArticleClass = $derived(
+  ['admin-editor-preview__article', 'prose', articleClass].filter(Boolean).join(' ')
+);
 
 $effect(() => {
   onScrollElementChange?.(previewScrollElement);
 
   return () => {
     onScrollElementChange?.(null);
+  };
+});
+
+$effect(() => {
+  onArticleElementChange?.(previewArticleElement);
+
+  return () => {
+    onArticleElementChange?.(null);
   };
 });
 </script>
@@ -31,7 +47,7 @@ $effect(() => {
     data-refreshing={loading && html ? 'true' : undefined}
   >
     {#if html}
-      <article class="admin-editor-preview__article prose">
+      <article bind:this={previewArticleElement} class={previewArticleClass}>
         {@html html}
       </article>
     {:else if loading}

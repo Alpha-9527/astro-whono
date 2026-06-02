@@ -4,7 +4,7 @@ import {
   isRecord,
   parseResponseBody
 } from '../../../scripts/admin-content/entry-transport';
-import type { AdminContentWriteCollectionKey } from '../../../lib/admin-console/content-shared';
+import type { AdminContentImageUploadCollectionKey } from '../../../lib/admin-console/content-shared';
 
 export type EditorImageUploadResult = {
   src: string;
@@ -18,7 +18,7 @@ export type EditorImageUploadResult = {
 
 export type EditorImageUploadInput = {
   uploadEndpoint: string;
-  collection: AdminContentWriteCollectionKey;
+  collection: AdminContentImageUploadCollectionKey;
   entryId: string;
   file: File;
 };
@@ -99,3 +99,8 @@ export const uploadBitsEditorImage = (
   input: Omit<EditorImageUploadInput, 'collection'>
 ): Promise<EditorImageUploadResponse> =>
   uploadContentEditorImage({ ...input, collection: 'bits' });
+
+export const uploadMemoEditorImage = (
+  input: Omit<EditorImageUploadInput, 'collection'>
+): Promise<EditorImageUploadResponse> =>
+  uploadContentEditorImage({ ...input, collection: 'memo' });

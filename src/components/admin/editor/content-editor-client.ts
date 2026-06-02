@@ -1,7 +1,9 @@
 import type {
   AdminContentEditorValues,
+  AdminContentCollectionKey,
   AdminContentWriteCollectionKey
 } from '../../../lib/admin-console/content-shared';
+import type { AdminContentDeletableCollectionKey } from '../../../lib/admin-console/content-delete-contract';
 import {
   getPayloadDeleteResult,
   getPayloadEditorBody,
@@ -56,7 +58,7 @@ export type ContentEditorSaveOutcome = ContentEditorRequestOutcome & {
 
 export type ContentEditorPreviewInput = {
   endpoint: string;
-  collection: AdminContentWriteCollectionKey;
+  collection: AdminContentCollectionKey;
   entryId: string;
   source: string;
   signal?: AbortSignal;
@@ -69,7 +71,7 @@ export type ContentEditorPreviewOutcome = Omit<ContentEditorRequestOutcome, 'rev
 
 export type ContentEditorDeleteInput = {
   endpoint: string;
-  collection: AdminContentWriteCollectionKey;
+  collection: AdminContentDeletableCollectionKey;
   entryId: string;
   revision: string;
   expectedRelativePath: string;

@@ -478,7 +478,7 @@ const getContentEmptyMessage = (sectionLabel: string): string => {
 
                                   <div class="admin-content-item__actions">
                                     <a class="admin-btn admin-btn--secondary admin-btn--compact" href={editHref}>
-                                      {item.collection === 'memo' ? '查看' : '编辑'}
+                                      编辑
                                     </a>
                                     <details class="admin-content-item__more">
                                       <summary class="admin-btn admin-btn--ghost admin-btn--compact">更多</summary>
@@ -490,7 +490,7 @@ const getContentEmptyMessage = (sectionLabel: string): string => {
                                           data-entry-id={item.collection === 'essay' ? item.id : undefined}
                                         >
                                           <AdminIcon name="admin-page" size={14} />
-                                          <span>{item.collection === 'essay' ? '修改信息' : item.collection === 'memo' ? '查看信息' : '编辑信息'}</span>
+                                          <span>{item.collection === 'memo' ? '小记信息' : item.collection === 'essay' ? '修改信息' : '编辑信息'}</span>
                                         </a>
                                         <a
                                           class:list={[
@@ -504,7 +504,7 @@ const getContentEmptyMessage = (sectionLabel: string): string => {
                                           tabindex={publicHref ? undefined : '-1'}
                                         >
                                           <AdminIcon name="link" size={14} />
-                                          <span>转到文章</span>
+                                          <span>{item.collection === 'memo' ? '转到小记' : item.collection === 'bits' ? '转到絮语' : '转到文章'}</span>
                                         </a>
                                         <a
                                           class="admin-content-menu-item"

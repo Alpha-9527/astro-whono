@@ -76,7 +76,7 @@ const assertUploadFile = (file: File): void => {
   }
 };
 
-const resolveEssayUploadDirectory = (sourcePath: string): string => {
+const resolveMarkdownBodyUploadDirectory = (sourcePath: string): string => {
   const parsed = path.parse(sourcePath);
   return parsed.name === 'index'
     ? path.join(parsed.dir, 'assets')
@@ -123,10 +123,12 @@ const writeUniqueImageFile = async (
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
-export const uploadAdminEssayImage = async ({
+export const uploadAdminMarkdownBodyImage = async ({
+  collection,
   entryId,
   file
 }: {
+  collection: 'essay' | 'memo';
   entryId: string;
   file: File;
 }): Promise<AdminImageUploadResult> => {
@@ -134,7 +136,7 @@ export const uploadAdminEssayImage = async ({
 
   let sourcePath: string;
   try {
-    sourcePath = resolveAdminContentEntrySourcePath('essay', entryId);
+    sourcePath = resolveAdminContentEntrySourcePath(collection, entryId);
   } catch (error) {
     if (error instanceof AdminContentEntryResolutionError) {
       throw new AdminImageUploadError(error.message, error.code === 'source-not-found' ? 404 : 400);
@@ -144,7 +146,7 @@ export const uploadAdminEssayImage = async ({
 
   const safeFileName = getSafeImageFileName(file.name);
   const buffer = Buffer.from(await file.arrayBuffer());
-  const assetPath = await writeUniqueImageFile(resolveEssayUploadDirectory(sourcePath), safeFileName, buffer);
+  const assetPath = await writeUniqueImageFile(resolveMarkdownBodyUploadDirectory(sourcePath), safeFileName, buffer);
   const relativePath = toRelativeProjectPath(assetPath);
 
   invalidateAdminImageCaches();
@@ -161,6 +163,24 @@ export const uploadAdminEssayImage = async ({
     mimeType: meta.mimeType ?? (file.type.trim() || null)
   };
 };
+
+export const uploadAdminEssayImage = async ({
+  entryId,
+  file
+}: {
+  entryId: string;
+  file: File;
+}): Promise<AdminImageUploadResult> =>
+  uploadAdminMarkdownBodyImage({ collection: 'essay', entryId, file });
+
+export const uploadAdminMemoImage = async ({
+  entryId,
+  file
+}: {
+  entryId: string;
+  file: File;
+}): Promise<AdminImageUploadResult> =>
+  uploadAdminMarkdownBodyImage({ collection: 'memo', entryId, file });
 
 export const uploadAdminBitsImage = async ({
   entryId,

@@ -1,6 +1,7 @@
 <script lang="ts">
 import type {
   AdminContentEditorValues,
+  AdminContentBodyImageUploadCollectionKey,
   AdminContentWriteCollectionKey
 } from '../../../lib/admin-console/content-shared';
 import type { AdminContentIssue } from './content-editor-client';
@@ -25,6 +26,7 @@ type Props = {
   slugPlaceholder: string;
   imageInsertOpen: boolean;
   galleryInsertOpen: boolean;
+  imageUploadCollection?: AdminContentBodyImageUploadCollectionKey;
   imageEditDraft?: ImageBlockDraft | null;
   galleryEditDraft?: GalleryBlockDraft | null;
   imageInsertEnabled: boolean;
@@ -55,6 +57,7 @@ let {
   slugPlaceholder,
   imageInsertOpen,
   galleryInsertOpen,
+  imageUploadCollection,
   imageEditDraft = null,
   galleryEditDraft = null,
   imageInsertEnabled,
@@ -100,6 +103,7 @@ export const captureReturnFocus = (trigger?: Element | null) => {
   <ImageInsertDialog
     open={imageInsertOpen}
     editDraft={imageEditDraft}
+    collection={imageUploadCollection ?? 'essay'}
     uploadEndpoint={imageUploadEndpoint}
     {entryId}
     {disabled}

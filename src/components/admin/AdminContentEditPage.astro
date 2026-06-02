@@ -21,6 +21,7 @@ import { createWithBase } from '../../utils/format';
 import {
   buildBitsEditorIslandProps,
   buildEssayEditorIslandProps,
+  buildMemoEditorIslandProps,
   loadAdminContentEditDevState
 } from './admin-content-edit-dev-state';
 
@@ -38,6 +39,9 @@ const base = import.meta.env.BASE_URL ?? '/';
 const withBase = createWithBase(base);
 const { settings } = getThemeSettings();
 const bitsDefaultAuthor = settings.page.bits.defaultAuthor;
+const DEFAULT_MEMO_TITLE = '生活小记';
+const resolveMemoDisplayText = (settingValue: string | null, frontmatterValue: string, fallback: string): string =>
+  settingValue ?? (frontmatterValue || fallback);
 const { default: adminShellStylesHref } = await import('../../styles/components/admin/shell.css?url');
 const contentEditDevState = shouldShowContentConsole
   ? await loadAdminContentEditDevState({
@@ -54,25 +58,33 @@ const essayEditorPayload = selectedEntryEditorPayload?.writable && selectedEntry
 const bitsEditorPayload = selectedEntryEditorPayload?.writable && selectedEntryEditorPayload.collection === 'bits'
   ? selectedEntryEditorPayload
   : null;
-const memoEditorPayload = selectedEntryEditorPayload?.collection === 'memo'
+const memoEditorPayload = selectedEntryEditorPayload?.writable && selectedEntryEditorPayload.collection === 'memo'
   ? selectedEntryEditorPayload
   : null;
 // Keep Svelte islands behind DEV-only dynamic imports; static imports leak
 // editor chunks into the production build.
 let EssayEditorIsland: any = null;
 let BitsEditorIsland: any = null;
+let MemoEditorIsland: any = null;
 if (import.meta.env.DEV && essayEditorPayload) {
   EssayEditorIsland = (await import('./editor/EssayEditorIsland.astro')).default;
 }
 if (import.meta.env.DEV && bitsEditorPayload) {
   BitsEditorIsland = (await import('./editor/BitsEditorIsland.astro')).default;
 }
+if (import.meta.env.DEV && memoEditorPayload) {
+  MemoEditorIsland = (await import('./editor/MemoEditorIsland.astro')).default;
+}
 const adminStylesHref = contentEditDevState?.stylesHref ?? adminShellStylesHref;
 const collectionHref = withBase(getAdminContentEntryListHref(collection));
 const shouldUseSvelteEssayEditor = Boolean(EssayEditorIsland);
 const shouldUseBitsEditor = Boolean(BitsEditorIsland);
-const shouldUseEditorPageLayout = shouldUseSvelteEssayEditor || shouldUseBitsEditor;
+const shouldUseMemoEditor = Boolean(MemoEditorIsland);
+const shouldUseEditorPageLayout = shouldUseSvelteEssayEditor || shouldUseBitsEditor || shouldUseMemoEditor;
 const contentEditorBodyClass = shouldUseEditorPageLayout ? 'admin-page--content-editor' : undefined;
+const memoPublicTitle = memoEditorPayload
+  ? resolveMemoDisplayText(settings.page.memo.title, memoEditorPayload.values.title, DEFAULT_MEMO_TITLE)
+  : DEFAULT_MEMO_TITLE;
 const editorEndpoints = {
   endpoint: withBase(ADMIN_CONTENT_ENTRY_API_PATH),
   exportEndpoint: withBase(ADMIN_CONTENT_EXPORT_API_PATH),
@@ -100,6 +112,13 @@ const bitsEditorIslandProps = bitsEditorPayload && contentEditDevState
       bitsOutlineItems: contentEditDevState.bitsOutlineItems
     })
   : null;
+const memoEditorIslandProps = memoEditorPayload && contentEditDevState
+  ? buildMemoEditorIslandProps({
+      payload: memoEditorPayload,
+      endpoints: editorEndpoints,
+      returnHref: collectionHref
+    })
+  : null;
 const contentConsoleSubtitle = selectedEntryEditorPayload
   ? `${selectedEntryEditorPayload.collection} · ${
       selectedEntryEditorPayload.collection === 'essay'
@@ -109,12 +128,16 @@ const contentConsoleSubtitle = selectedEntryEditorPayload
           : '只读详情'
     }`
   : '内容编辑';
+const selectedEntryTitle = selectedEntryEditorPayload
+  ? selectedEntryEditorPayload.collection === 'memo'
+    ? memoPublicTitle
+    : selectedEntryEditorPayload.values.title
+  : '';
+const selectedEntryDescription = selectedEntryEditorPayload && 'description' in selectedEntryEditorPayload.values
+  ? selectedEntryEditorPayload.values.description
+  : '';
 const editTitle = selectedEntryEditorPayload
-  ? (
-      selectedEntryEditorPayload.values.title
-      || ('description' in selectedEntryEditorPayload.values ? selectedEntryEditorPayload.values.description : '')
-      || selectedEntryEditorPayload.entryId
-    )
+  ? selectedEntryTitle || selectedEntryDescription || selectedEntryEditorPayload.entryId
   : entryId;
 const getReadonlyValue = (value: string): string => value || '(未设置)';
 const memoReadonlyRows = memoEditorPayload
@@ -147,14 +170,16 @@ const memoReadonlyRows = memoEditorPayload
           class:list={[
             'admin-content-console',
             'admin-content-edit-page',
+            shouldUseEditorPageLayout && 'admin-content-edit-page--workspace',
             shouldUseSvelteEssayEditor && 'admin-content-edit-page--essay',
-            shouldUseBitsEditor && 'admin-content-edit-page--bits'
+            shouldUseBitsEditor && 'admin-content-edit-page--bits',
+            shouldUseMemoEditor && 'admin-content-edit-page--memo'
           ]}
         >
           <header class="admin-content-page-head">
             <div class="admin-content-page-head__copy">
               {
-                shouldUseSvelteEssayEditor || shouldUseBitsEditor ? (
+                shouldUseSvelteEssayEditor || shouldUseBitsEditor || shouldUseMemoEditor ? (
                   <div class="admin-content-title-row">
                     <h2 class="admin-content-heading">{editTitle}</h2>
                     {
@@ -169,7 +194,7 @@ const memoReadonlyRows = memoEditorPayload
                         >
                           修改信息
                         </button>
-                      ) : (
+                      ) : shouldUseBitsEditor ? (
                         <button
                           class="admin-content-info-trigger"
                           type="button"
@@ -180,7 +205,7 @@ const memoReadonlyRows = memoEditorPayload
                         >
                           修改信息
                         </button>
-                      )
+                      ) : null
                     }
                   </div>
                 ) : (
@@ -206,7 +231,7 @@ const memoReadonlyRows = memoEditorPayload
                 shouldUseEditorPageLayout ? (
                   <a
                     class="admin-btn admin-btn--ghost admin-btn--compact"
-                    href={shouldUseBitsEditor ? collectionHref : withBase('/admin/content/')}
+                    href={shouldUseBitsEditor || shouldUseMemoEditor ? collectionHref : withBase('/admin/content/')}
                     data-admin-editor-page-actions-fallback
                   >
                     返回
@@ -223,12 +248,16 @@ const memoReadonlyRows = memoEditorPayload
 
           {
             EssayEditorIsland && essayEditorIslandProps ? (
-              <article class="admin-content-editor admin-content-editor--svelte">
+              <article class="admin-content-editor admin-content-editor--workspace admin-content-editor--svelte">
                 <EssayEditorIsland {...essayEditorIslandProps} />
               </article>
             ) : BitsEditorIsland && bitsEditorIslandProps ? (
-              <article class="admin-content-editor admin-content-editor--bits">
+              <article class="admin-content-editor admin-content-editor--workspace admin-content-editor--bits">
                 <BitsEditorIsland {...bitsEditorIslandProps} />
+              </article>
+            ) : MemoEditorIsland && memoEditorIslandProps ? (
+              <article class="admin-content-editor admin-content-editor--workspace admin-content-editor--memo">
+                <MemoEditorIsland {...memoEditorIslandProps} />
               </article>
             ) : (
               <article class="admin-content-readonly">

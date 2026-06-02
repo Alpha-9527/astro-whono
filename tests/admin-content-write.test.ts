@@ -168,20 +168,97 @@ describe('admin content write api', () => {
     }
   });
 
-  it('rejects memo writes while still exposing readonly schema info', async () => {
+  it('loads editable payload for memo entries with body text', async () => {
     const { readAdminContentEntryEditorPayload } = await import('../src/lib/admin-console/content-shared');
     const payload = await readAdminContentEntryEditorPayload('memo', 'index');
 
-    expect(payload.writable).toBe(false);
-    expect(payload.readonlyReason).toContain('memo 当前保持只读');
+    expect(payload.writable).toBe(true);
+    expect(payload.readonlyReason).toBeNull();
     expect(payload.collection).toBe('memo');
     if (payload.collection === 'memo') {
+      expect(payload.bodyText).toBe('\nmemo body\n');
       expect(payload.values.title).toBe('Memo');
       expect(payload.values.subtitle).toBe('Memo subtitle');
       expect(payload.values.date).toBe('2026-01-10');
       expect(payload.values.draft).toBe(true);
       expect(payload.values.slug).toBe('memo-note');
     }
+  });
+
+  it('rejects non-index memo entry writes even if an extra source file exists', async () => {
+    await writeFile(
+      path.join(tempRoot, 'src', 'content', 'memo', 'extra.md'),
+      ['---', 'title: Extra Memo', '---', '', 'extra memo body', ''].join('\n'),
+      'utf8'
+    );
+
+    const { POST } = await import('../src/pages/api/admin/content/entry');
+    const response = await POST({
+      request: createJsonRequest('http://127.0.0.1:4321/api/admin/content/entry', {
+        collection: 'memo',
+        entryId: 'extra',
+        revision: 'stale',
+        frontmatter: {
+          title: 'Extra Memo',
+          subtitle: '',
+          date: '',
+          draft: false,
+          slug: ''
+        },
+        body: 'updated extra memo body'
+      }),
+      url: new URL('http://127.0.0.1:4321/api/admin/content/entry')
+    } as never);
+
+    expect(response.status).toBe(400);
+    const payload = JSON.parse(await response.text());
+    expect(payload.ok).toBe(false);
+    expect(payload.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: 'entryId',
+          message: expect.stringContaining('memo 仅支持固定源文件')
+        })
+      ])
+    );
+  });
+
+  it('does not resolve memo index.mdx as the fixed page source', async () => {
+    await writeFile(
+      path.join(tempRoot, 'src', 'content', 'memo', 'index.mdx'),
+      ['---', 'title: MDX Memo', '---', '', 'mdx memo body', ''].join('\n'),
+      'utf8'
+    );
+
+    const { readAdminContentEntryEditorPayload } = await import('../src/lib/admin-console/content-shared');
+    const current = await readAdminContentEntryEditorPayload('memo', 'index');
+    expect(current.relativePath).toBe('src/content/memo/index.md');
+    if (current.collection === 'memo') {
+      expect(current.bodyText).toBe('\nmemo body\n');
+    }
+
+    const { POST } = await import('../src/pages/api/admin/content/entry');
+    const response = await POST({
+      request: createJsonRequest('http://127.0.0.1:4321/api/admin/content/entry', {
+        collection: 'memo',
+        entryId: 'index.mdx',
+        revision: 'stale',
+        frontmatter: {},
+        body: 'updated mdx memo body'
+      }),
+      url: new URL('http://127.0.0.1:4321/api/admin/content/entry')
+    } as never);
+
+    expect(response.status).toBe(400);
+    const payload = JSON.parse(await response.text());
+    expect(payload.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: 'entryId',
+          message: expect.stringContaining('memo 仅支持固定源文件')
+        })
+      ])
+    );
   });
 
   it('returns structured json errors for invalid write inputs', async () => {
@@ -195,10 +272,10 @@ describe('admin content write api', () => {
         message: '不支持的 content collection'
       },
       {
-        body: { collection: 'memo', entryId: 'index', revision: 'stale', frontmatter: {} },
+        body: { collection: 'memo', entryId: 'index', revision: null, frontmatter: {} },
         status: 400,
-        issuePath: 'collection',
-        message: '只读'
+        issuePath: 'revision',
+        message: '请求体缺少 revision'
       },
       {
         body: { collection: 'essay', entryId: '../secret', revision: 'stale', frontmatter: {} },
@@ -657,6 +734,70 @@ describe('admin content write api', () => {
     const afterSection = splitMarkdownFrontmatter(after);
     expect(afterSection.frontmatterBlock).toBe(beforeSection.frontmatterBlock);
     expect(afterSection.bodyText).toBe(nextBody);
+  });
+
+  it('saves memo body through the shared entry API without rewriting fixed-page frontmatter', async () => {
+    const { readAdminContentEntryEditorPayload } = await import('../src/lib/admin-console/content-shared');
+    const { splitMarkdownFrontmatter } = await import('../src/lib/admin-console/frontmatter');
+    const { POST } = await import('../src/pages/api/admin/content/entry');
+    const current = await readAdminContentEntryEditorPayload('memo', 'index');
+    if (current.collection !== 'memo') throw new Error('expected memo payload');
+    const before = await readFile(path.join(tempRoot, 'src', 'content', 'memo', 'index.md'), 'utf8');
+    const beforeSection = splitMarkdownFrontmatter(before);
+
+    const nextBody = ['# Memo', '', '小记正文已写入。', ''].join('\n');
+    const response = await POST({
+      request: createJsonRequest('http://127.0.0.1:4321/api/admin/content/entry', {
+        collection: 'memo',
+        entryId: 'index',
+        revision: current.revision,
+        frontmatter: {},
+        body: nextBody
+      }),
+      url: new URL('http://127.0.0.1:4321/api/admin/content/entry')
+    } as never);
+
+    expect(response.status).toBe(200);
+    const payload = JSON.parse(await response.text());
+    expect(payload.ok).toBe(true);
+    expect(payload.result.changedFields).toEqual(['body']);
+    expect(payload.payload.collection).toBe('memo');
+    expect(payload.payload.bodyText).toBe(nextBody);
+
+    const after = await readFile(path.join(tempRoot, 'src', 'content', 'memo', 'index.md'), 'utf8');
+    const afterSection = splitMarkdownFrontmatter(after);
+    expect(afterSection.frontmatterBlock).toBe(beforeSection.frontmatterBlock);
+    expect(afterSection.bodyText).toBe(nextBody);
+  });
+
+  it('rejects memo body writes that reference missing local images', async () => {
+    const { readAdminContentEntryEditorPayload } = await import('../src/lib/admin-console/content-shared');
+    const { POST } = await import('../src/pages/api/admin/content/entry');
+    const current = await readAdminContentEntryEditorPayload('memo', 'index');
+    if (current.collection !== 'memo') throw new Error('expected memo payload');
+
+    const response = await POST({
+      request: createJsonRequest('http://127.0.0.1:4321/api/admin/content/entry', {
+        collection: 'memo',
+        entryId: 'index',
+        revision: current.revision,
+        frontmatter: current.values,
+        body: '![missing](./assets/missing.webp)\n'
+      }),
+      url: new URL('http://127.0.0.1:4321/api/admin/content/entry')
+    } as never);
+
+    expect(response.status).toBe(400);
+    const payload = JSON.parse(await response.text());
+    expect(payload.ok).toBe(false);
+    expect(payload.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: 'body',
+          message: expect.stringContaining('src/content/memo/assets/missing.webp')
+        })
+      ])
+    );
   });
 
   it('allows essay saves when local image references exist or are outside the local-relative check', async () => {
@@ -1251,5 +1392,44 @@ describe('admin content write api', () => {
     expect(payload.ok).toBe(false);
     expect(payload.payload.collection).toBe('bits');
     expect(payload.payload.bodyText).toBe('\nexternal bits body\n');
+  });
+
+  it('returns latest memo body when rejecting stale revisions', async () => {
+    const { readAdminContentEntryEditorPayload } = await import('../src/lib/admin-console/content-shared');
+    const { POST } = await import('../src/pages/api/admin/content/entry');
+    const current = await readAdminContentEntryEditorPayload('memo', 'index');
+    if (current.collection !== 'memo') throw new Error('expected memo payload');
+
+    await writeFile(
+      path.join(tempRoot, 'src', 'content', 'memo', 'index.md'),
+      [
+        '---',
+        'title: External Memo',
+        'draft: false',
+        '---',
+        '',
+        'external memo body',
+        ''
+      ].join('\n'),
+      'utf8'
+    );
+
+    const response = await POST({
+      request: createJsonRequest('http://127.0.0.1:4321/api/admin/content/entry', {
+        collection: 'memo',
+        entryId: 'index',
+        revision: current.revision,
+        frontmatter: current.values,
+        body: 'local memo body\n'
+      }),
+      url: new URL('http://127.0.0.1:4321/api/admin/content/entry')
+    } as never);
+
+    expect(response.status).toBe(409);
+    const payload = JSON.parse(await response.text());
+    expect(payload.ok).toBe(false);
+    expect(payload.payload.collection).toBe('memo');
+    expect(payload.payload.values.title).toBe('External Memo');
+    expect(payload.payload.bodyText).toBe('\nexternal memo body\n');
   });
 });

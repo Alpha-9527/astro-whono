@@ -18,6 +18,7 @@ type Props = {
   busy: boolean;
   bodyToolsEnabled?: boolean;
   toolbarPreset?: EditorToolbarPreset;
+  galleryToolEnabled?: boolean;
   outlineOpen: boolean;
   outlineVisible: boolean;
   outlineToggleLabel: string;
@@ -54,6 +55,7 @@ type Props = {
   resetLabel?: string;
   downloadLabel?: string;
   deleteLabel?: string;
+  showDelete?: boolean;
   onApplyTool: (toolId: MarkdownToolId) => void;
   onApplyHeading: (level: MarkdownHeadingLevel) => void;
   onApplyCallout: (calloutType: MarkdownCalloutType) => void;
@@ -70,7 +72,7 @@ type Props = {
   onSave: () => void | Promise<void>;
   onReset: (event: MouseEvent) => void;
   onDownload: (event: MouseEvent) => void;
-  onDelete: (event: MouseEvent) => void | Promise<void>;
+  onDelete?: (event: MouseEvent) => void | Promise<void>;
 };
 
 let {
@@ -78,6 +80,7 @@ let {
   busy,
   bodyToolsEnabled = true,
   toolbarPreset = 'full',
+  galleryToolEnabled = true,
   outlineOpen,
   outlineVisible,
   outlineToggleLabel,
@@ -114,6 +117,7 @@ let {
   resetLabel = '还原更改',
   downloadLabel = '下载源文件',
   deleteLabel = '删除内容',
+  showDelete = true,
   onApplyTool,
   onApplyHeading,
   onApplyCallout,
@@ -138,6 +142,7 @@ let {
   <EditorToolbar
     preset={toolbarPreset}
     {busy}
+    {galleryToolEnabled}
     {outlineOpen}
     {outlineVisible}
     {outlineToggleLabel}
@@ -193,6 +198,7 @@ let {
   {resetLabel}
   {downloadLabel}
   {deleteLabel}
+  {showDelete}
   {onSave}
   {onReset}
   {onDownload}

@@ -11,11 +11,15 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 - 新增本地文章管理与写作 Content Console，可在开发环境中浏览、编辑、导出和删除文章。
 - 文章编辑器引入 CodeMirror 编辑区，内置5种语法高亮主题，提升长文编辑体验。
 - 文章编辑器支持编辑 / 预览布局切换、目录与语法侧栏、编辑器语法高亮、行号选项，以及常用 Markdown、数学公式、emoji、图片与画廊写作辅助。
+- 新增 bits 编辑工作台，可在本地后台编辑正文、基础信息和配图，并查看卡片预览。
+- 新增 memo 编辑工作台，可在本地后台编辑 `src/content/memo/index.md` 正文、插入正文图片并预览页面内容。
 - 本地后台新增侧栏收起、窄窗口 rail 导航和界面偏好，便于在桌面与窄桌面窗口中释放工作区空间。
 
 ### Changed
 - 优化本地后台在窄桌面窗口下的布局表现，减少横向滚动、控件遮挡和工作区挤压
 - Content Console 改为直接基于源文件展示内容列表，提升开发环境中新建、保存和删除文章后的刷新稳定性。
+- Content Console 现在统一展示 essay、bits 和 memo 内容入口；memo 仍是固定单页内容，不支持创建或删除。
+- `/memo/` 页面顶部引言现在可在本地后台的 memo 编辑页中维护；建议将旧版引言迁移到 `src/content/memo/index.md` 正文开头（第一个 H2 前），未迁移的站点仍保留兼容显示。
 
 ### Fixed
 - 修复后台图片预览在遇到无效地址时仍可能尝试加载图片的问题，地址不合法时会隐藏预览并清空图片源。

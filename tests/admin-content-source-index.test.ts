@@ -159,7 +159,7 @@ describe('admin-console/content-source-index', () => {
       collection: 'memo',
       id: 'index',
       publicHref: '/memo/',
-      readonlyReason: expect.stringContaining('memo 当前保持只读'),
+      readonlyReason: null,
       title: 'Memo Title',
       slug: 'memo',
       sourceError: null
@@ -274,6 +274,34 @@ describe('admin-console/content-source-index', () => {
 
     expect(memo?.bodyDerived.plainText).toContain(lateMarker);
     expect(memo?.searchHaystack).not.toContain(lateMarker);
+  });
+
+  it('keeps memo source manifest fixed to index.md', async () => {
+    await writeContent('memo', 'index.md', markdown('title: Memo'));
+    await writeContent('memo', 'index.mdx', markdown('title: MDX Memo'));
+    await writeContent('memo', 'extra.md', markdown('title: Extra Memo'));
+    await writeContent('memo', 'nested/index.md', markdown('title: Nested Memo'));
+    await writeContent('memo', 'index/index.md', markdown('title: Directory Memo'));
+
+    const manifest = await loadAdminContentSourceManifest();
+    const memoItems = await loadAdminContentSourceIndex(manifest, 'memo');
+
+    expect(getAdminContentSourceCounts(manifest).memo).toBe(1);
+    expect(manifest.memo).toHaveLength(1);
+    expect(manifest.memo[0]?.replace(/\\/g, '/')).toContain('/src/content/memo/index.md');
+    expect(memoItems).toHaveLength(1);
+    expect(memoItems[0]?.id).toBe('index');
+  });
+
+  it('does not require memo frontmatter title in the source index', async () => {
+    await writeContent('memo', 'index.md', markdown('subtitle: Memo subtitle', 'Memo body'));
+
+    const manifest = await loadAdminContentSourceManifest();
+    const memo = (await loadAdminContentSourceIndex(manifest, 'memo'))[0];
+
+    expect(memo?.title).toBe('index');
+    expect(memo?.sourceError).toBeNull();
+    expect(memo?.searchHaystack).toContain('memo subtitle');
   });
 
   it('treats the manifest as a page-request snapshot', async () => {

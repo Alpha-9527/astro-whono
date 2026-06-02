@@ -122,12 +122,6 @@ const extractWriteInput = (body: unknown): WriteInput => {
     issues.push({ path: 'body', message });
   }
 
-  if (hasBody && rawCollection && rawCollection !== 'essay' && rawCollection !== 'bits') {
-    const message = '当前仅 essay / bits 支持正文写盘';
-    errors.push(message);
-    issues.push({ path: 'body', message });
-  }
-
   return {
     ...(collection ? { collection } : {}),
     ...(entryId ? { entryId } : {}),

@@ -30,6 +30,7 @@ describe('admin images api', () => {
     await mkdir(path.join(tempRoot, 'src', 'content', 'essay', 'guide-assets'), { recursive: true });
     await mkdir(path.join(tempRoot, 'src', 'content', 'essay', 'no-assets'), { recursive: true });
     await mkdir(path.join(tempRoot, 'src', 'content', 'bits'), { recursive: true });
+    await mkdir(path.join(tempRoot, 'src', 'content', 'memo'), { recursive: true });
     await mkdir(path.join(tempRoot, 'src', 'assets'), { recursive: true });
 
     await writeFile(path.join(tempRoot, 'public', 'favicon.png'), PNG_1X1);
@@ -48,6 +49,10 @@ describe('admin images api', () => {
     await writeFile(
       path.join(tempRoot, 'src', 'content', 'bits', 'demo.md'),
       ['---', 'title: Bits 图片上传测试', 'date: 2026-05-26T10:00:00+08:00', '---', '', '短内容。'].join('\n')
+    );
+    await writeFile(
+      path.join(tempRoot, 'src', 'content', 'memo', 'index.md'),
+      ['---', 'title: Memo 图片上传测试', '---', '', 'memo body'].join('\n')
     );
     await writeFile(path.join(tempRoot, 'src', 'content', 'essay', 'guide-assets', 'hero.png'), PNG_1X1);
     await writeFile(path.join(tempRoot, 'src', 'assets', 'hero.png'), PNG_1X1);
@@ -311,6 +316,61 @@ describe('admin images api', () => {
       })
     );
     await expect(readFile(path.join(tempRoot, 'public', 'bits', 'bit-cover.png'))).resolves.toEqual(PNG_1X1);
+  });
+
+  it('uploads memo body images next to the fixed memo source file', async () => {
+    const { POST } = await import('../src/pages/api/admin/images/upload');
+    const formData = new FormData();
+    formData.set('collection', 'memo');
+    formData.set('entryId', 'index');
+    formData.set('image', new File([PNG_1X1], 'Memo Shot.PNG', { type: 'image/png' }));
+
+    const response = await POST({
+      request: createUploadRequest('http://127.0.0.1:4321/api/admin/images/upload', formData),
+      url: new URL('http://127.0.0.1:4321/api/admin/images/upload')
+    } as never);
+
+    expect(response.status).toBe(200);
+    const payload = JSON.parse(await response.text());
+    expect(payload.ok).toBe(true);
+    expect(payload.result).toEqual(
+      expect.objectContaining({
+        src: './assets/memo-shot.png',
+        path: 'src/content/memo/assets/memo-shot.png',
+        fileName: 'memo-shot.png',
+        width: 1,
+        height: 1,
+        mimeType: 'image/png'
+      })
+    );
+    await expect(readFile(path.join(tempRoot, 'src', 'content', 'memo', 'assets', 'memo-shot.png'))).resolves.toEqual(PNG_1X1);
+  });
+
+  it('rejects memo image uploads for non-index entries', async () => {
+    await writeFile(
+      path.join(tempRoot, 'src', 'content', 'memo', 'extra.md'),
+      ['---', 'title: Extra Memo', '---', '', 'extra memo body'].join('\n')
+    );
+
+    const { POST } = await import('../src/pages/api/admin/images/upload');
+    const formData = new FormData();
+    formData.set('collection', 'memo');
+    formData.set('entryId', 'extra');
+    formData.set('image', new File([PNG_1X1], 'Memo Extra.PNG', { type: 'image/png' }));
+
+    const response = await POST({
+      request: createUploadRequest('http://127.0.0.1:4321/api/admin/images/upload', formData),
+      url: new URL('http://127.0.0.1:4321/api/admin/images/upload')
+    } as never);
+
+    expect(response.status).toBe(400);
+    const payload = JSON.parse(await response.text());
+    expect(payload.ok).toBe(false);
+    expect(payload.errors).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('memo 仅支持固定源文件')
+      ])
+    );
   });
 
   it('rejects non-image uploads without writing files', async () => {

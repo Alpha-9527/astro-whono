@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
-import { open, readFile, readdir } from 'node:fs/promises';
+import { access, open, readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { StringDecoder } from 'node:string_decoder';
 import { normalizeBitsAvatarPath } from '../../utils/format';
@@ -22,19 +22,25 @@ import {
   type FrontmatterPatch,
   splitMarkdownFrontmatter
 } from './frontmatter';
-import { findMissingEssayLocalImageReferences } from './essay-image-references';
+import { findMissingMarkdownBodyLocalImageReferences } from './essay-image-references';
 import type {
   AdminContentCollectionKey
 } from './content-collections';
 
 export {
   ADMIN_CONTENT_COLLECTION_KEYS,
+  ADMIN_CONTENT_BODY_IMAGE_UPLOAD_COLLECTION_KEYS,
+  ADMIN_CONTENT_IMAGE_UPLOAD_COLLECTION_KEYS,
   ADMIN_CONTENT_WRITE_COLLECTION_KEYS,
+  isAdminContentBodyImageUploadCollectionKey,
   isAdminContentCollectionKey,
+  isAdminContentImageUploadCollectionKey,
   isAdminContentWriteCollectionKey
 } from './content-collections';
 export type {
+  AdminContentBodyImageUploadCollectionKey,
   AdminContentCollectionKey,
+  AdminContentImageUploadCollectionKey,
   AdminContentWriteCollectionKey
 } from './content-collections';
 
@@ -130,8 +136,9 @@ export type AdminMemoEditorPayload = {
   defaultPublicSlug: string;
   revision: string;
   relativePath: string;
-  writable: false;
-  readonlyReason: string;
+  writable: true;
+  readonlyReason: null;
+  bodyText: string;
   values: AdminMemoEditorValues;
 };
 
@@ -227,6 +234,7 @@ const hashSourceText = (sourceText: string): string =>
 
 const FRONTMATTER_READ_CHUNK_SIZE = 4096;
 const FRONTMATTER_OPENING_MARKERS = ['---\n', '---\r\n'] as const;
+const MEMO_FIXED_ENTRY_ID = 'index';
 
 const trimFrontmatterLineEnding = (value: string): string =>
   value.endsWith('\r') ? value.slice(0, -1) : value;
@@ -329,6 +337,21 @@ export const resolveAdminContentEntrySourcePath = (
   entryId: string
 ): string => {
   const normalizedEntryId = normalizeEntryId(entryId);
+  if (collection === 'memo') {
+    if (normalizedEntryId !== MEMO_FIXED_ENTRY_ID) {
+      throw new AdminContentEntryResolutionError(
+        'invalid-entry-id',
+        'memo 仅支持固定源文件：src/content/memo/index.md'
+      );
+    }
+    const memoSourcePath = path.join(getContentRoot(), collection, 'index.md');
+    if (existsSync(memoSourcePath)) return memoSourcePath;
+    throw new AdminContentEntryResolutionError(
+      'source-not-found',
+      'memo 固定源文件不存在：src/content/memo/index.md'
+    );
+  }
+
   const basePath = path.join(getContentRoot(), collection, ...normalizedEntryId.split('/'));
   const candidates = normalizedEntryId.endsWith('.md') || normalizedEntryId.endsWith('.mdx')
     ? [basePath]
@@ -474,6 +497,14 @@ const parseAdminBitsEditorInput = (
   return issues.length > 0 ? { issues } : { values, issues };
 };
 
+const validateAdminMemoEditorInput = (input: unknown): AdminContentValidationIssue[] => {
+  if (!isRecord(input)) {
+    return [createIssue('frontmatter', 'frontmatter 必须是对象')];
+  }
+
+  return [];
+};
+
 export const resolveAdminContentEntryIdFromSourcePath = (
   collection: AdminContentCollectionKey,
   filePath: string
@@ -500,6 +531,20 @@ export const listAdminCollectionSourceFiles = async (
 ): Promise<string[]> => {
   const root = getCollectionRoot(collection);
   if (!existsSync(root)) return [];
+
+  if (collection === 'memo') {
+    const candidates = [path.join(root, 'index.md')];
+    const files: string[] = [];
+    for (const filePath of candidates) {
+      try {
+        await access(filePath);
+        files.push(filePath);
+      } catch {
+        // memo 是固定页面源；不存在候选文件时保持空 manifest。
+      }
+    }
+    return files;
+  }
 
   const walk = async (dirPath: string): Promise<string[]> => {
     const entries = await readdir(dirPath, { withFileTypes: true });
@@ -672,10 +717,8 @@ const toMemoEditorValues = (state: AdminContentSourceState): AdminMemoEditorValu
   };
 };
 
-export const getAdminContentReadOnlyReason = (collection: AdminContentCollectionKey): string | null =>
-  collection === 'memo'
-    ? 'memo 当前保持只读；仅 essay / bits 支持内容写回。memo.date 可选，memo.slug 使用普通字符串，不复用 essay 的 slugRule。'
-    : null;
+export const getAdminContentReadOnlyReason = (_collection: AdminContentCollectionKey): string | null =>
+  null;
 
 export const readAdminContentEntryEditorPayload = async (
   collection: AdminContentCollectionKey,
@@ -720,8 +763,9 @@ export const readAdminContentEntryEditorPayload = async (
     defaultPublicSlug: state.defaultPublicSlug,
     revision: state.revision,
     relativePath: state.relativePath,
-    writable: false,
-    readonlyReason: getAdminContentReadOnlyReason(collection) ?? '当前 collection 暂不支持写盘',
+    writable: true,
+    readonlyReason: null,
+    bodyText: state.bodyText,
     values: toMemoEditorValues(state)
   };
 };
@@ -1065,7 +1109,7 @@ const buildEssayWritePlan = async (
   }
 
   if (bodyInput !== undefined) {
-    const missingImageReferences = findMissingEssayLocalImageReferences({
+    const missingImageReferences = findMissingMarkdownBodyLocalImageReferences({
       bodyText: bodyInput,
       sourcePath: state.sourcePath
     });
@@ -1174,6 +1218,39 @@ const buildBitsWritePlan = (
   };
 };
 
+const buildMemoWritePlan = (
+  state: AdminContentSourceState,
+  bodyInput?: string
+): AdminWritePlan => {
+  if (bodyInput !== undefined) {
+    const missingImageReferences = findMissingMarkdownBodyLocalImageReferences({
+      bodyText: bodyInput,
+      sourcePath: state.sourcePath
+    });
+    if (missingImageReferences.length > 0) {
+      return {
+        issues: missingImageReferences.map((reference) =>
+          createIssue('body', `正文引用的本地图片不存在：${reference.relativePath}`)
+        ),
+        changedFields: [],
+        patches: []
+      };
+    }
+  }
+
+  const changedFields: string[] = [];
+  if (bodyInput !== undefined && bodyInput !== state.bodyText) {
+    changedFields.push('body');
+  }
+
+  return {
+    issues: [],
+    changedFields,
+    patches: [],
+    ...(bodyInput !== undefined ? { bodyText: bodyInput } : {})
+  };
+};
+
 export const buildAdminContentWritePlan = async (
   collection: AdminContentCollectionKey,
   entryId: string,
@@ -1218,16 +1295,19 @@ export const buildAdminContentWritePlan = async (
     };
   }
 
+  const memoIssues = validateAdminMemoEditorInput(frontmatterInput);
+  if (memoIssues.length > 0) {
+    return {
+      state,
+      issues: memoIssues,
+      changedFields: [],
+      patches: []
+    };
+  }
+
   return {
     state,
-    issues: [
-      createIssue(
-        'collection',
-        '当前仅支持 essay / bits 内容写回；memo 保持只读。'
-      )
-    ],
-    changedFields: [],
-    patches: []
+    ...buildMemoWritePlan(state, bodyInput)
   };
 };
 

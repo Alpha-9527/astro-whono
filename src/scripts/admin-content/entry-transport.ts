@@ -178,8 +178,9 @@ const isAdminMemoEditorPayload = (value: unknown): value is AdminMemoEditorPaylo
   && typeof value.defaultPublicSlug === 'string'
   && typeof value.revision === 'string'
   && typeof value.relativePath === 'string'
-  && value.writable === false
-  && typeof value.readonlyReason === 'string'
+  && value.writable === true
+  && value.readonlyReason === null
+  && typeof value.bodyText === 'string'
   && isAdminMemoEditorValues(value.values);
 
 export const getPayloadEditorPayload = (value: unknown): AdminContentEditorPayload | null => {
@@ -207,18 +208,20 @@ export const getPayloadEssayBody = (value: unknown): string | null => {
 
 export function getPayloadEditorValues(value: unknown, collection: 'essay'): AdminEssayEditorValues | null;
 export function getPayloadEditorValues(value: unknown, collection: 'bits'): AdminBitsEditorValues | null;
+export function getPayloadEditorValues(value: unknown, collection: 'memo'): AdminMemoEditorValues | null;
 export function getPayloadEditorValues(
   value: unknown,
   collection: AdminContentWriteCollectionKey
-): AdminEssayEditorValues | AdminBitsEditorValues | null;
+): AdminEssayEditorValues | AdminBitsEditorValues | AdminMemoEditorValues | null;
 export function getPayloadEditorValues(
   value: unknown,
   collection: AdminContentWriteCollectionKey
-): AdminEssayEditorValues | AdminBitsEditorValues | null {
+): AdminEssayEditorValues | AdminBitsEditorValues | AdminMemoEditorValues | null {
   const payload = getPayloadEditorPayload(value);
   if (!payload || payload.collection !== collection || !payload.writable) return null;
   if (collection === 'essay' && isAdminEssayEditorPayload(payload)) return payload.values;
   if (collection === 'bits' && isAdminBitsEditorPayload(payload)) return payload.values;
+  if (collection === 'memo' && isAdminMemoEditorPayload(payload)) return payload.values;
   return null;
 }
 
@@ -230,5 +233,6 @@ export const getPayloadEditorBody = (
   if (!payload || payload.collection !== collection) return null;
   if (collection === 'essay' && isAdminEssayEditorPayload(payload)) return payload.bodyText;
   if (collection === 'bits' && isAdminBitsEditorPayload(payload)) return payload.bodyText;
+  if (collection === 'memo' && isAdminMemoEditorPayload(payload)) return payload.bodyText;
   return null;
 };

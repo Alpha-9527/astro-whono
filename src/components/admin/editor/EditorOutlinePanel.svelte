@@ -13,7 +13,9 @@ type Props = {
   headings: readonly MarkdownOutlineItem[];
   listItems: readonly EditorOutlineListItem[];
   headingsEnabled?: boolean;
+  listEnabled?: boolean;
   headingsTabLabel?: string;
+  headingsTabIcon?: 'book-open-text' | 'list-collapse' | 'square-chart-gantt';
   listTabLabel?: string;
   headingsEmptyText?: string;
   listEmptyText?: string;
@@ -28,7 +30,9 @@ let {
   headings,
   listItems,
   headingsEnabled = true,
+  listEnabled = true,
   headingsTabLabel = '文章目录',
+  headingsTabIcon = undefined,
   listTabLabel = '文章列表',
   headingsEmptyText = '暂无 H2/H3 标题',
   listEmptyText = '暂无文章',
@@ -38,11 +42,12 @@ let {
 }: Props = $props();
 
 const tabs = $derived([
-  ...(headingsEnabled ? [{ id: 'headings' as const, label: headingsTabLabel }] : []),
-  { id: 'essays' as const, label: listTabLabel }
+  ...(headingsEnabled ? [{ id: 'headings' as const, label: headingsTabLabel, icon: headingsTabIcon }] : []),
+  ...(listEnabled ? [{ id: 'essays' as const, label: listTabLabel, icon: undefined }] : [])
 ]);
+const fallbackTab = $derived(tabs[0]?.id ?? 'headings');
 const effectiveActiveTab = $derived(
-  headingsEnabled && activeTab === 'headings' ? 'headings' : 'essays'
+  tabs.some((tab) => tab.id === activeTab) ? activeTab : fallbackTab
 );
 const getTabId = (tab: EditorOutlineTab) => `${panelId}-${tab}-tab`;
 const getPanelId = (tab: EditorOutlineTab) => `${panelId}-${tab}-panel`;
@@ -59,6 +64,8 @@ const selectTab = async (tab: EditorOutlineTab, options: { focus?: boolean } = {
 };
 
 const selectRelativeTab = (currentTab: EditorOutlineTab, direction: -1 | 1) => {
+  if (tabs.length === 0) return;
+
   const currentIndex = tabs.findIndex((tab) => tab.id === currentTab);
   const safeCurrentIndex = currentIndex === -1 ? 0 : currentIndex;
   const nextIndex = (safeCurrentIndex + direction + tabs.length) % tabs.length;
@@ -111,7 +118,10 @@ const handleTabKeydown = (event: KeyboardEvent, tab: EditorOutlineTab) => {
         onclick={() => onTabChange(tab.id)}
         onkeydown={(event) => handleTabKeydown(event, tab.id)}
       >
-        {tab.label}
+        {#if tab.icon}
+          <AdminEditorIcon name={tab.icon} size={14} strokeWidth={2} />
+        {/if}
+        <span>{tab.label}</span>
       </button>
     {/each}
   </div>

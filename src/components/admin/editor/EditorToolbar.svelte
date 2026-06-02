@@ -84,6 +84,7 @@ const bitsInlineTools = [
 type Props = {
   preset?: EditorToolbarPreset;
   busy?: boolean;
+  galleryToolEnabled?: boolean;
   outlineOpen?: boolean;
   outlineVisible?: boolean;
   outlineToggleLabel: string;
@@ -126,6 +127,7 @@ type Props = {
 let {
   preset = 'full',
   busy = false,
+  galleryToolEnabled = true,
   outlineOpen = false,
   outlineVisible = outlineOpen,
   outlineToggleLabel,
@@ -526,7 +528,7 @@ $effect(() => {
           <AdminEditorIcon name={tool.icon} size={toolbarIconSize} strokeWidth={2} />
         </button>
       {/each}
-      {#if preset === 'full'}
+      {#if preset === 'full' && galleryToolEnabled}
         <button
           class="admin-btn admin-btn--tool admin-btn--compact admin-btn--icon admin-editor-markdown-toolbar__button admin-editor-markdown-toolbar__gallery-direct"
           type="button"
@@ -731,20 +733,22 @@ $effect(() => {
         id="admin-editor-insert-menu"
         aria-label="插入内容"
       >
-        <div class="admin-editor-insert-menu__group" role="group" aria-label="媒体">
-          <span class="admin-editor-insert-menu__group-label">媒体</span>
-          <button
-            class="admin-content-menu-item admin-editor-insert-menu__item"
-            type="button"
-            disabled={busy}
-            onclick={openGalleryDialog}
-          >
-            <span class="admin-editor-insert-menu__icon" aria-hidden="true">
-              <AdminEditorIcon name={galleryTool.icon} size={15} strokeWidth={2} />
-            </span>
-            <span class="admin-editor-insert-menu__label">{galleryTool.label}</span>
-          </button>
-        </div>
+        {#if galleryToolEnabled}
+          <div class="admin-editor-insert-menu__group" role="group" aria-label="媒体">
+            <span class="admin-editor-insert-menu__group-label">媒体</span>
+            <button
+              class="admin-content-menu-item admin-editor-insert-menu__item"
+              type="button"
+              disabled={busy}
+              onclick={openGalleryDialog}
+            >
+              <span class="admin-editor-insert-menu__icon" aria-hidden="true">
+                <AdminEditorIcon name={galleryTool.icon} size={15} strokeWidth={2} />
+              </span>
+              <span class="admin-editor-insert-menu__label">{galleryTool.label}</span>
+            </button>
+          </div>
+        {/if}
 
         <div class="admin-editor-insert-menu__group" role="group" aria-label="文章结构">
           <span class="admin-editor-insert-menu__group-label">文章结构</span>

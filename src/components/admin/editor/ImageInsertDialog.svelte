@@ -1,7 +1,8 @@
 <script lang="ts">
 import { createModalDialogFocusController } from '../../../scripts/admin-console/modal-dialog-focus';
 import AdminEditorIcon from './AdminEditorIcon.svelte';
-import { uploadEssayEditorImage, type EditorImageUploadResult } from './editor-image-upload';
+import type { AdminContentBodyImageUploadCollectionKey } from '../../../lib/admin-console/content-shared';
+import { uploadContentEditorImage, type EditorImageUploadResult } from './editor-image-upload';
 import {
   REMOTE_IMAGE_URL_ERROR,
   createImageInsertText,
@@ -16,6 +17,7 @@ import type { MarkdownInsertPlacement } from './markdown-tools';
 type Props = {
   open: boolean;
   editDraft?: ImageBlockDraft | null;
+  collection: AdminContentBodyImageUploadCollectionKey;
   uploadEndpoint: string;
   entryId: string;
   disabled?: boolean;
@@ -42,6 +44,7 @@ const IMAGE_ALIGNMENT_OPTIONS: Array<{ value: ImageDisplayAlignment; label: stri
 let {
   open,
   editDraft = null,
+  collection,
   uploadEndpoint,
   entryId,
   disabled = false,
@@ -196,7 +199,7 @@ const uploadAndInsert = async () => {
   busy = true;
   errorText = '';
 
-  const upload = await uploadEssayEditorImage({ uploadEndpoint, entryId, file: selectedFile });
+  const upload = await uploadContentEditorImage({ uploadEndpoint, collection, entryId, file: selectedFile });
   if (upload.ok) {
     insertImageText(upload.result.src, upload.result);
   } else {
@@ -369,7 +372,7 @@ $effect(() => {
                 </span>
                 <span class="admin-editor-image-insert__source-copy">
                   <strong>{selectedFile ? selectedFile.name : '选择本地图片'}</strong>
-                  <span>{selectedFile ? formatBytes(selectedFile.size) : '上传后保存到当前随笔附件目录，并插入 Markdown'}</span>
+                  <span>{selectedFile ? formatBytes(selectedFile.size) : '上传后保存到当前内容附件目录，并插入 Markdown'}</span>
                 </span>
               </button>
             {/if}

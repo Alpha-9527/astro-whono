@@ -4,6 +4,7 @@ import type {
 import { getAdminContentEntryEditHref } from '../../lib/admin-console/content-routes';
 import {
   type AdminBitsEditorPayload,
+  type AdminMemoEditorPayload,
   readAdminContentEntryEditorPayload,
   type AdminContentEditorPayload,
   type AdminEssayEditorPayload
@@ -15,6 +16,7 @@ import {
 } from '../../lib/admin-console/content-source-index';
 import type { BitsEditorIslandProps } from './editor/bits-editor-island-props';
 import type { EssayEditorShellProps } from './editor/editor-shell-props';
+import type { MemoEditorIslandProps } from './editor/memo-editor-island-props';
 import type {
   EditorOutlineEssaySourceItem,
   EditorOutlineListSourceItem
@@ -52,6 +54,11 @@ const loadAdminContentStylesHref = async (): Promise<string> => {
 const loadArticleStylesHref = async (): Promise<string> => {
   const { default: articleStylesHref } = await import('../../styles/article.css?url');
   return articleStylesHref;
+};
+
+const loadMemoStylesHref = async (): Promise<string> => {
+  const { default: memoStylesHref } = await import('../../styles/memo.css?url');
+  return memoStylesHref;
 };
 
 const loadAdminImageSharedStylesHref = async (): Promise<string> => {
@@ -129,6 +136,20 @@ export const loadAdminContentEditDevState = async ({
     };
   }
 
+  if (payload.collection === 'memo') {
+    const [articleStylesHref, memoStylesHref] = await Promise.all([
+      loadArticleStylesHref(),
+      loadMemoStylesHref()
+    ]);
+
+    return {
+      payload,
+      essayOutlineItems: [],
+      bitsOutlineItems: [],
+      stylesHref: [adminShellStylesHref, articleStylesHref, memoStylesHref, adminContentStylesHref]
+    };
+  }
+
   return {
     payload,
     essayOutlineItems: [],
@@ -185,4 +206,24 @@ export const buildBitsEditorIslandProps = ({
   initialBody: payload.bodyText,
   defaultAuthor,
   bitsOutlineItems
+});
+
+export const buildMemoEditorIslandProps = ({
+  payload,
+  endpoints,
+  returnHref
+}: {
+  payload: AdminMemoEditorPayload;
+  endpoints: AdminContentEditorEndpoints;
+  returnHref: string;
+}): MemoEditorIslandProps => ({
+  endpoint: endpoints.endpoint,
+  exportEndpoint: endpoints.exportEndpoint,
+  previewEndpoint: endpoints.previewEndpoint,
+  imageUploadEndpoint: endpoints.imageUploadEndpoint,
+  returnHref,
+  entryId: payload.entryId,
+  revision: payload.revision,
+  initialFrontmatter: payload.values,
+  initialBody: payload.bodyText
 });

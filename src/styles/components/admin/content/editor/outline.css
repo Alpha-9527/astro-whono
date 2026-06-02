@@ -25,6 +25,10 @@
 }
 
 .admin-editor-outline-panel__tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   min-width: 0;
   min-height: 26px;
   padding: 0 6px;
@@ -40,6 +44,19 @@
   letter-spacing: 0;
   white-space: nowrap;
   cursor: pointer;
+}
+
+.admin-editor-outline-panel__tab svg {
+  flex: 0 0 auto;
+  color: var(--faint);
+}
+
+.admin-editor-outline-panel__tabs[data-single='true'] .admin-editor-outline-panel__tab {
+  justify-content: flex-start;
+  min-height: 27px;
+  background: var(--admin-row-hover-bg);
+  color: var(--text);
+  cursor: default;
 }
 
 .admin-editor-outline-panel__tab:hover,

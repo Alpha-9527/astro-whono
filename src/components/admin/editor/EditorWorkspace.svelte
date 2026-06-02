@@ -50,6 +50,7 @@ type Props = {
   galleryEditEnabled?: boolean;
   previewHtml: string;
   previewBusy: boolean;
+  previewArticleClass?: string;
   sidePanelsVisible: boolean;
   sidePanelLayout: EditorSidePanelLayout;
   outlinePanelId: string;
@@ -58,7 +59,9 @@ type Props = {
   markdownOutlineItems: readonly MarkdownOutlineItem[];
   outlineListItems: readonly EditorOutlineListItem[];
   outlineHeadingsEnabled?: boolean;
+  outlineListEnabled?: boolean;
   outlineHeadingsTabLabel?: string;
+  outlineHeadingsTabIcon?: 'book-open-text' | 'list-collapse' | 'square-chart-gantt';
   outlineListTabLabel?: string;
   outlineHeadingsEmptyText?: string;
   outlineListEmptyText?: string;
@@ -69,6 +72,7 @@ type Props = {
   onGalleryEditRequest: (block: EditableGalleryBlock) => void;
   onBodyChange?: (value: string) => void;
   onPreviewScrollElementChange: (element: HTMLElement | null) => void;
+  onPreviewArticleElementChange?: (element: HTMLElement | null) => void;
   onShortcutTool: (toolId: MarkdownToolId) => void;
   onToggleScrollSync: () => void;
   onScrollToTop: () => void;
@@ -104,6 +108,7 @@ let {
   galleryEditEnabled = true,
   previewHtml,
   previewBusy,
+  previewArticleClass = '',
   sidePanelsVisible,
   sidePanelLayout,
   outlinePanelId,
@@ -112,7 +117,9 @@ let {
   markdownOutlineItems,
   outlineListItems,
   outlineHeadingsEnabled = true,
+  outlineListEnabled = true,
   outlineHeadingsTabLabel = '文章目录',
+  outlineHeadingsTabIcon = undefined,
   outlineListTabLabel = '文章列表',
   outlineHeadingsEmptyText = '暂无 H2/H3 标题',
   outlineListEmptyText = '暂无文章',
@@ -123,6 +130,7 @@ let {
   onGalleryEditRequest,
   onBodyChange = () => {},
   onPreviewScrollElementChange,
+  onPreviewArticleElementChange = () => {},
   onShortcutTool,
   onToggleScrollSync,
   onScrollToTop,
@@ -190,7 +198,9 @@ let {
           html={previewHtml}
           loading={previewBusy}
           error={previewError}
+          articleClass={previewArticleClass}
           onScrollElementChange={onPreviewScrollElementChange}
+          onArticleElementChange={onPreviewArticleElementChange}
         />
       {/if}
     </div>
@@ -204,7 +214,9 @@ let {
       headings={markdownOutlineItems}
       listItems={outlineListItems}
       {outlineHeadingsEnabled}
+      {outlineListEnabled}
       {outlineHeadingsTabLabel}
+      {outlineHeadingsTabIcon}
       {outlineListTabLabel}
       {outlineHeadingsEmptyText}
       {outlineListEmptyText}
