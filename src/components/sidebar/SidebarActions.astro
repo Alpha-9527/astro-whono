@@ -35,6 +35,18 @@ const {
 
 const mainSiteHomeLabel = '主站首页';
 const showAdminUiPrefs = isAdminContext && isDev;
+const getPublicNavPathBadge = (href: string): string => {
+  try {
+    const parsed = new URL(href, 'https://astro-whono.invalid');
+    return `${parsed.pathname}${parsed.search}`;
+  } catch {
+    return href;
+  }
+};
+const publicNavItems = navItems.map((item) => ({
+  ...item,
+  pathBadge: getPublicNavPathBadge(item.href)
+}));
 ---
 
 <div class="sidebar-actions">
@@ -51,15 +63,16 @@ const showAdminUiPrefs = isAdminContext && isDev;
 
   {isAdminContext && navItems.length > 0 ? (
     <details class="public-nav-group sidebar-action--rail-only">
-      <summary class="icon-button public-nav-group__summary" aria-label="前台页面" data-tooltip="前台页面">
+      <summary class="icon-button public-nav-group__summary" aria-label="前台页面">
         <AdminIcon name="layout-list" class="icon" />
       </summary>
       <div class="public-nav-group__popover">
         <ul class="public-nav-group__list">
-          {navItems.map((item) => (
+          {publicNavItems.map((item) => (
             <li>
               <a class="public-nav-group__link" href={item.href} aria-current={item.isActive ? 'page' : undefined}>
-                <span>{item.label}</span>
+                <span class="public-nav-group__label">{item.label}</span>
+                <span class="public-nav-group__badge">{item.pathBadge}</span>
               </a>
             </li>
           ))}

@@ -360,7 +360,7 @@
 
 /* Admin rail：窄屏与页面级 rail 共用同一套声明。 */
 body.admin-page {
-  --admin-rail-width: 68px;
+  --admin-rail-width: 52px;
   --admin-rail-item-size: 44px;
   --admin-rail-control-size: 34px;
   --admin-rail-control-inset: calc(
@@ -406,9 +406,9 @@ body.admin-page {
   --pad-x: 32px;
   --admin-sidebar-dynamic-height: 100dvh;
   --admin-sidebar-padding: calc(var(--admin-rail-block-start) + env(safe-area-inset-top))
-    12px calc(var(--admin-rail-block-end) + env(safe-area-inset-bottom));
+    4px calc(var(--admin-rail-block-end) + env(safe-area-inset-bottom));
   --admin-sidebar-align: center;
-  --admin-sidebar-gap: 8px;
+  --admin-sidebar-gap: 0px;
   --admin-sidebar-divider-block-start: 0px;
   --admin-sidebar-divider-block-end: 0px;
   --admin-sidebar-site-title-display: none;
@@ -628,13 +628,15 @@ body.admin-page .public-nav-group__list {
 }
 
 body.admin-page .public-nav-group__link {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
   min-height: 30px;
   padding: 6px 8px;
   border-radius: 7px;
   color: var(--muted);
+  font-family: var(--font-copy);
   font-size: 13px;
   line-height: 1.35;
   text-decoration: none;
@@ -650,11 +652,27 @@ body.admin-page .public-nav-group__link::before {
   background: var(--faint);
 }
 
-body.admin-page .public-nav-group__link span {
+body.admin-page .public-nav-group__label {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+body.admin-page .public-nav-group__badge {
+  justify-self: end;
+  max-inline-size: 74px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 1px 5px 2px;
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--bg) 74%, var(--panel) 26%);
+  color: color-mix(in srgb, var(--muted) 88%, var(--text) 12%);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1.2;
 }
 
 body.admin-page .public-nav-group__link:hover,
@@ -666,6 +684,13 @@ body.admin-page .public-nav-group__link:focus-visible {
 
 body.admin-page .public-nav-group__link[aria-current="page"] {
   background: color-mix(in srgb, var(--panel) 82%, var(--text) 7%);
+}
+
+body.admin-page .public-nav-group__link:hover .public-nav-group__badge,
+body.admin-page .public-nav-group__link:focus-visible .public-nav-group__badge,
+body.admin-page .public-nav-group__link[aria-current="page"] .public-nav-group__badge {
+  border-color: color-mix(in srgb, var(--border) 72%, var(--text) 28%);
+  color: color-mix(in srgb, var(--text) 78%, var(--muted) 22%);
 }
 
 body.admin-page .sidebar-actions {
@@ -680,7 +705,12 @@ body.admin-page .sidebar-actions .icon-button[data-tooltip]::after {
   display: var(--admin-sidebar-action-tooltip-display);
 }
 
-:root[data-admin-sidebar='collapsed'] body.admin-page .sidebar-actions .icon-button[data-tooltip]::before {
+:root[data-admin-sidebar='collapsed']
+  body.admin-page
+  :is(
+    .sidebar-actions > .icon-button[data-tooltip],
+    .admin-ui-prefs__summary
+  )::before {
   content: '';
   display: block;
   position: absolute;
@@ -700,8 +730,10 @@ body.admin-page .sidebar-actions .icon-button[data-tooltip]::after {
 
 :root[data-admin-sidebar='collapsed']
   body.admin-page
-  .sidebar-actions
-  .icon-button[data-tooltip]:is(:hover, :focus-visible)::before {
+  :is(
+    .sidebar-actions > .icon-button[data-tooltip],
+    .admin-ui-prefs__summary
+  ):is(:hover, :focus-visible)::before {
   background: color-mix(in srgb, var(--panel) 72%, transparent);
 }
 
@@ -712,9 +744,9 @@ body.admin-page .sidebar-actions .icon-button[data-tooltip]::after {
     --pad-x: 32px;
     --admin-sidebar-dynamic-height: 100dvh;
     --admin-sidebar-padding: calc(var(--admin-rail-block-start) + env(safe-area-inset-top))
-      12px calc(var(--admin-rail-block-end) + env(safe-area-inset-bottom));
+      4px calc(var(--admin-rail-block-end) + env(safe-area-inset-bottom));
     --admin-sidebar-align: center;
-    --admin-sidebar-gap: 8px;
+    --admin-sidebar-gap: 0px;
     --admin-sidebar-divider-block-start: 0px;
     --admin-sidebar-divider-block-end: 0px;
     --admin-sidebar-site-title-display: none;
@@ -747,7 +779,12 @@ body.admin-page .sidebar-actions .icon-button[data-tooltip]::after {
     padding-block-start: calc(var(--admin-content-rail-padding-top) + env(safe-area-inset-top));
   }
 
-  :root:not([data-admin-sidebar='collapsed']) body.admin-page .sidebar-actions .icon-button[data-tooltip]::before {
+  :root:not([data-admin-sidebar='collapsed'])
+    body.admin-page
+    :is(
+      .sidebar-actions > .icon-button[data-tooltip],
+      .admin-ui-prefs__summary
+    )::before {
     content: '';
     display: block;
     position: absolute;
@@ -767,8 +804,10 @@ body.admin-page .sidebar-actions .icon-button[data-tooltip]::after {
 
   :root:not([data-admin-sidebar='collapsed'])
     body.admin-page
-    .sidebar-actions
-    .icon-button[data-tooltip]:is(:hover, :focus-visible)::before {
+    :is(
+      .sidebar-actions > .icon-button[data-tooltip],
+      .admin-ui-prefs__summary
+    ):is(:hover, :focus-visible)::before {
     background: color-mix(in srgb, var(--panel) 72%, transparent);
   }
 
