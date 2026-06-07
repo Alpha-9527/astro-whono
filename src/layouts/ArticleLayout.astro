@@ -44,6 +44,8 @@ const activeNavId: SidebarNavId = entry?.data?.archive === false ? 'essay' : 'ar
 const hasMath = containsMarkdownMath(entry.body ?? '');
 const katexStylesheetAttrs = { [MARKDOWN_MATH_STYLESHEET_DATA_ATTR]: 'true' };
 const updatedAt = entry.data.updatedAt ?? null;
+const displayDate = updatedAt ?? entry.data.date;
+const displayDateLabel = updatedAt ? '更新于：' : (articleMetaSettings.dateLabel ?? '');
 const articleReadingStats = articleMetaSettings.showWordCount || articleMetaSettings.showReadingTime
   ? (() => {
       const wordCount = derivedText.plainText.replace(/\s+/g, '').length;
@@ -101,14 +103,7 @@ const shouldShowMetaLine = articleMetaSettings.showDate
       <div class="meta-line meta-line--items">
         {articleMetaSettings.showDate ? (
           <span class="meta-line__item">
-            <time datetime={entry.data.date.toISOString()}>
-              {`${articleMetaSettings.dateLabel ?? ''}${formatISODateUtc(entry.data.date)}`}
-            </time>
-          </span>
-        ) : null}
-        {articleMetaSettings.showDate && updatedAt ? (
-          <span class="meta-line__item">
-            <time datetime={updatedAt.toISOString()}>{`更新于：${formatISODateUtc(updatedAt)}`}</time>
+            <time datetime={displayDate.toISOString()}>{`${displayDateLabel}${formatISODateUtc(displayDate)}`}</time>
           </span>
         ) : null}
         {articleMetaSettings.showTags && visibleTags.length ? (

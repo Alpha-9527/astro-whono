@@ -247,7 +247,7 @@ draft: false        # 草稿：上线后不会出现在列表/RSS（本地预览
 archive: true       # 归档开关：false 不进 /archive 与 /archive/rss.xml（默认 true，详情与 /essay 仍可见，可省略）
 slug: optional      # 自定义 URL slug（默认使用拍平后的内容路径，例如 2024/my-post → 2024-my-post）
 badge: optional     # 列表徽标；未填时列表显示“随笔”
-updatedAt: 2026-01-02 # 可选更新时间；未填写时不会显示
+updatedAt: 2026-01-02 # 可选更新日期；填写后前台日期显示为“更新于：YYYY-MM-DD”
 ```
 
 `essay.date` 建议使用 `YYYY-MM-DD` 格式，用于归档、排序和页面日期展示。
@@ -260,15 +260,15 @@ updatedAt: 2026-01-02 # 可选更新时间；未填写时不会显示
 publishedAt: 2026-01-01T12:00:00+08:00
 ```
 
-`publishedAt` 无需为旧内容批量补充。当前公开列表、归档、RSS 和页面日期仍以 `date` 为准。
+`publishedAt` 无需为旧内容批量补充。它只用于保留更精确的发布时间；归档排序和 RSS 发布时间仍会按现有规则读取 `date` / `publishedAt`。
 
-如需展示文章修订日期，可以额外填写可选字段：
+如果文章有修订日期，可以填写：
 
 ```yaml
 updatedAt: 2026-01-02
 ```
 
-`updatedAt` 支持 `YYYY-MM-DD` 或 ISO 8601 datetime，展示时按日期显示为“更新于：YYYY-MM-DD”。未填写时页面保持原样，不会显示更新时间。
+`updatedAt` 表示可选更新日期，建议使用 `YYYY-MM-DD`。填写后，首页索引、随笔列表和文章详情页会用“更新于：YYYY-MM-DD”替代原日期展示；未填写时保持原有日期展示。
 
 未加引号的 YAML datetime 也会继续兼容读取。少数跨 UTC 日期边界的场景下，解析器可能已丢失原始时区文本，此时会按解析后的 UTC 日期处理。
 
